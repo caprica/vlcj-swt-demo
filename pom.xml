@@ -9,11 +9,13 @@
 
     <groupId>uk.co.caprica</groupId>
     <artifactId>vlcj-swt-demo</artifactId>
+    <packaging>pom</packaging>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
-        <swt.version>4.5.2</swt.version>
-        <vlcj.version>3.10.1</vlcj.version>
+        <swt.version>4.6.1</swt.version>
+        <vlcj.version>4.0.0-SNAPSHOT</vlcj.version>
+        <vlcj-swt.version>1.0.0-SNAPSHOT</vlcj-swt.version>
     </properties>
 
     <repositories>
@@ -28,6 +30,11 @@
             <groupId>uk.co.caprica</groupId>
             <artifactId>vlcj</artifactId>
             <version>${vlcj.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>uk.co.caprica</groupId>
+            <artifactId>vlcj-swt</artifactId>
+            <version>${vlcj-swt.version}</version>
         </dependency>
     </dependencies>
 

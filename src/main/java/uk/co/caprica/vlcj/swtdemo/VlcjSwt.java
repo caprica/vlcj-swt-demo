@@ -1,4 +1,4 @@
-package uk.co.caprica.vlcjswtdemo;
+package uk.co.caprica.vlcj.swtdemo;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -10,9 +10,13 @@ import org.eclipse.swt.widgets.Shell;
 
 import uk.co.caprica.vlcj.binding.LibVlc;
 import uk.co.caprica.vlcj.binding.internal.libvlc_instance_t;
+import uk.co.caprica.vlcj.factory.swt.SwtMediaPlayerFactory;
+import uk.co.caprica.vlcj.media.Media;
+import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.player.embedded.videosurface.VideoSurfaceAdapter;
 import uk.co.caprica.vlcj.player.embedded.videosurface.linux.LinuxVideoSurfaceAdapter;
 import uk.co.caprica.vlcj.player.embedded.videosurface.mac.MacVideoSurfaceAdapter;
+import uk.co.caprica.vlcj.player.embedded.videosurface.swt.CompositeVideoSurface;
 import uk.co.caprica.vlcj.player.embedded.videosurface.windows.WindowsVideoSurfaceAdapter;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 
@@ -48,23 +52,27 @@ public class VlcjSwt {
         main.setLayoutData(gridData);
         main.setBackground(black);
 
-        Composite videoSurface = new Composite(main, SWT.EMBEDDED | SWT.NO_BACKGROUND);
-        videoSurface.setLayout(gridLayout);
-        videoSurface.setLayoutData(gridData);
-        videoSurface.setBackground(black);
+        Composite videoSurfaceComposite = new Composite(main, SWT.EMBEDDED | SWT.NO_BACKGROUND);
+        videoSurfaceComposite.setLayout(gridLayout);
+        videoSurfaceComposite.setLayoutData(gridData);
+        videoSurfaceComposite.setBackground(black);
 
-        LibVlc libvlc = LibVlc.INSTANCE;
-        libvlc_instance_t instance = libvlc.libvlc_new(0, null);
+        // The only thing that differs from "vanilla" vlcj is to use the SWT factory for access to the SWT Composite
+        // video surface - the media player is a normal embedded media player
+        SwtMediaPlayerFactory factory = new SwtMediaPlayerFactory();
+        EmbeddedMediaPlayer mediaPlayer = factory.mediaPlayers().newEmbeddedMediaPlayer();
 
-        SwtEmbeddedMediaPlayer mediaPlayer = new SwtEmbeddedMediaPlayer(libvlc, instance);
-        mediaPlayer.setVideoSurface(new CompositeVideoSurface(videoSurface, getVideoSurfaceAdapter()));
+        CompositeVideoSurface videoSurface = factory.swt().newCompositeVideoSurface(videoSurfaceComposite);
+        mediaPlayer.videoSurface().setVideoSurface(videoSurface);
 
         shell.setLocation(100, 100);
         shell.setSize(800, 450);
 
         shell.open();
 
-        mediaPlayer.playMedia(args[0]);
+        Media media = factory.media().newMedia(args[0]);
+        mediaPlayer.media().set(media);
+        mediaPlayer.controls().play();
 
         while (!shell.isDisposed()) {
             if (!display.readAndDispatch()) {
@@ -72,23 +80,12 @@ public class VlcjSwt {
             }
         }
 
+        mediaPlayer.controls().stop();
+        mediaPlayer.release();
+        media.release();
+        factory.release();
+
         display.dispose();
     }
 
-    private static VideoSurfaceAdapter getVideoSurfaceAdapter() {
-        VideoSurfaceAdapter videoSurfaceAdapter;
-        if(RuntimeUtil.isNix()) {
-            videoSurfaceAdapter = new LinuxVideoSurfaceAdapter();
-        }
-        else if(RuntimeUtil.isWindows()) {
-            videoSurfaceAdapter = new WindowsVideoSurfaceAdapter();
-        }
-        else if(RuntimeUtil.isMac()) {
-            videoSurfaceAdapter = new MacVideoSurfaceAdapter();
-        }
-        else {
-            throw new RuntimeException("Unable to create a media player - failed to detect a supported operating system");
-        }
-        return videoSurfaceAdapter;
-    }
 }
